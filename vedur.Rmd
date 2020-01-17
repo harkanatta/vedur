@@ -1,0 +1,493 @@
+---
+title: "Veður"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r}
+Sys.setlocale("LC_TIME", "Icelandic")
+#vedrid <- rbind(read.csv('D:/valtyr/veðrið/Skags_08112010-27072013.csv'),read.csv('D:/valtyr/veðrið/Skags_27072013-27072016.csv'),read.csv('D:/valtyr/veðrið/Skags_27072016-19032017.csv'),read.csv('D:/valtyr/veðrið/Skags_19032017-27112017.csv'),read.csv('D:/valtyr/veðrið/27112017-04032018.csv'))
+#vedur <- vedrid
+
+vedur <- read.csv('Skagastr&ouml;nd_01102019-14012020.csv',header = T,sep = "\t")
+vedur$dags <- strptime(vedur$Timabil, "%H:%M %d.%m.%Y")
+#vedur$dags2 <- strptime(vedur$Timabil, "%d/%m/%Y %H:%M")
+vedur$dagsw <- ifelse(is.na(as.Date(as.character(vedur$Timabil),"%H:%M %d.%m.%Y")),as.character.Date(vedur$dags2),as.character.Date(vedur$dags))
+vedur$dags <- as.POSIXct(vedur$dagsw,tz="GMT")
+vedur <- vedur[order(vedur$dags,decreasing=F),]
+vedur$dags2 <- as.Date(vedur$dags,format="%d.%m.%Y")
+
+# edur <- sample(rownames(vedur),100)
+# edur <- vedur[edur,]
+# edur$da <- ifelse(is.na(as.Date(as.character(edur$Timabil),"%H:%M %d.%m.%Y")),as.character.Date(edur$dags2),as.character.Date(edur$dags))
+
+max(vedur$dags)
+sapply(vedur, function(x) sum(is.na(x)))
+#vedur$dags2 <- as.Date(vedur$dags,format="%d.%m.%Y")
+#vedur$dags3 <- format(vedur$dags,"%b")
+#vedur$dags4 <- format(vedur$dags,"%Y")
+vedur <- vedur[!is.na(vedur$dags),]
+# vedur <- vedur[!vedur$year=="2010",] taka út rugl gildi
+#vedur <- vedur[!row.names(vedur)=='216122',]
+vedur$month <- factor(format(strptime(vedur$dags,'%Y-%m-%d'),'%b'), levels=format(ISOdate(2000, 1:12, 1), "%b"), ordered=TRUE)
+vedur$dagur <-format(vedur$dags, "%d")
+vedur$year <- format(vedur$dags,"%Y")
+vedur$klst <- format(vedur$dags,"%H")
+vedur$vika <- format(vedur$dags,"%U")
+#vedur$dagur <- format(vedur$dags,'%Y.%m.%d')
+#vedur$dagur <- strptime(vedur$Timabil, "%d/%m/%Y")
+
+vedur <- vedur[vedur$Vindur..m.s.<100,]
+vedur$Lofthiti..degC. <-  as.numeric(gsub(',','.',vedur$Lofthiti..degC.))
+vedur$Flodatafla..m. <-  as.numeric(gsub(',','.',vedur$Flodatafla..m.))
+vedur$Sjavarhaed..m. <-  as.numeric(gsub(',','.',vedur$Sjavarhaed..m.))
+vedur <- vedur[!vedur$Lofthiti..degC.==min(vedur$Lofthiti..degC.),] #-6999°C tekið út
+
+```
+
+
+```{r}
+table(vedur$dagur,vedur$year)
+library('plyr')
+library('plotrix')
+library(RColorBrewer)
+plot(ddply(vedur,.(month),summarize,'m/s'=mean(Vindur..m.s.)),type='p')
+plot(ddply(vedur[vedur$month=='feb.',],.(year),summarize,'m/s'=mean(Vindur..m.s.)),type='p')
+
+tapply(vedur$Vindur..m.s. ,vedur$month,mean)
+
+medur1 <- ddply(vedur,.(year,month),summarize,vindur=mean(Vindur..m.s.))
+medur <- ddply(medur1,.(month),summarize,'m/s'=mean(vindur),sderr= std.error(vindur))
+#eða
+#medur <- data.frame(`m/s`=tapply(vedur$Vindur..m.s. ,vedur$month,mean),sderr=tapply(vedur$Vindur..m.s. ,vedur$month,std.error))
+#colnames(medur)[1] <- 'm/s'
+
+plot(c(1:12),seq(3,11,8/11),type="n",xlab="", ylab="metrar á sek.", main='Meðalvindur á Skagaströnd',axes=FALSE)
+axis(1, at=1:12, lab=medur$month)
+axis(2,at=4:10)
+points(c(medur$`m/s`),  pch=20,type="p", col="black",lwd=1.2,cex=1.6)
+arrows(seq(1,12,1),medur$`m/s`+medur$sderr,seq(1,12,1),medur$`m/s`-medur$sderr,col='black',angle=90,length=0.03, code=3)
+
+png(filename=paste('D:/valtyr/veðrið/','rass','rass',paste('rass','png',sep='.'),sep=''),24,7,"cm",pointsize=6,res=1800)
+plot(df.dagar$A,rownames(df.dagar),type='n',xlab='',ylab='',xaxt='n',yaxt='n',axes=F)
+abline(v=df.dagar$A[df.dagar$solar=='myrkur'],col=col1,lwd=0.1)
+par(new=TRUE)
+plot(c(1:12),seq(3,11,8/11),type="n",xlab="", ylab="metrar á sek.", main='Meðalvindur á Skagaströnd',axes=FALSE)
+axis(1, at=1:12, lab=medur$month)
+axis(2,at=4:10)
+points(c(medur$`m/s`),  pch=20,type="p", col="black",lwd=1.2,cex=1.6)
+arrows(seq(1,12,1),medur$`m/s`+medur$sderr,seq(1,12,1),medur$`m/s`-medur$sderr,col='black',angle=90,length=0.03, code=3)
+dev.off()
+
+# xvals <- tapply(medur1$month,medur1$year,function(x) return(x))
+# yvals <- tapply(medur1$vindur ,medur1$year,function(x) return(x))
+# cols <- brewer.pal(7,"Set3")
+# #plot(1:max(unlist(xvals)),ylim=(c(0,length(unlist(yvals)))),type="n")
+# # thanks to @BenBolker for refining this next key line
+# mapply(lines,xvals,yvals,col=cols,pch=1:7,type="o")
+```
+
+
+```{r}
+
+# WindRose.R http://stackoverflow.com/questions/17266780/wind-rose-with-ggplot-r
+require(ggplot2)
+require(RColorBrewer)
+
+plot.windrose <- function(data,
+                          spd,
+                          dir,
+                          spdres = 2,
+                          dirres = 30,
+                          spdmin = 2,
+                          spdmax = 20,
+                          spdseq = NULL,
+                          palette = "YlGnBu",
+                          countmax = NA,
+                          debug = 0){
+  
+  
+  # Look to see what data was passed in to the function
+  if (is.numeric(spd) & is.numeric(dir)){
+    # assume that we've been given vectors of the speed and direction vectors
+    data <- data.frame(spd = spd,
+                       dir = dir)
+    spd = "spd"
+    dir = "dir"
+  } else if (exists("data")){
+    # Assume that we've been given a data frame, and the name of the speed 
+    # and direction columns. This is the format we want for later use.    
+  }  
+  
+  # Tidy up input data ----
+  n.in <- NROW(data)
+  dnu <- (is.na(data[[spd]]) | is.na(data[[dir]]))
+  data[[spd]][dnu] <- NA
+  data[[dir]][dnu] <- NA
+  
+  # figure out the wind speed bins ----
+  if (missing(spdseq)){
+    spdseq <- seq(spdmin,spdmax,spdres)
+  } else {
+    if (debug >0){
+      cat("Using custom speed bins \n")
+    }
+  }
+  # get some information about the number of bins, etc.
+  n.spd.seq <- length(spdseq)
+  n.colors.in.range <- n.spd.seq - 1
+  
+  # create the color map
+  spd.colors <- colorRampPalette(brewer.pal(min(max(3,
+                                                    n.colors.in.range),
+                                                min(9,
+                                                    n.colors.in.range)),                                               
+                                            palette))(n.colors.in.range)
+  
+  if (max(data[[spd]],na.rm = TRUE) > spdmax){    
+    spd.breaks <- c(spdseq,
+                    max(data[[spd]],na.rm = TRUE))
+    spd.labels <- c(paste(c(spdseq[1:n.spd.seq-1]),
+                          '-',
+                          c(spdseq[2:n.spd.seq])),
+                    paste(spdmax,
+                          "-",
+                          max(data[[spd]],na.rm = TRUE)))
+    spd.colors <- c(spd.colors, "grey50")
+  } else{
+    spd.breaks <- spdseq
+    spd.labels <- paste(c(spdseq[1:n.spd.seq-1]),
+                        '-',
+                        c(spdseq[2:n.spd.seq]))    
+  }
+  data$spd.binned <- cut(x = data[[spd]],
+                         breaks = spd.breaks,
+                         labels = spd.labels,
+                         ordered_result = TRUE)
+  
+  # figure out the wind direction bins
+  dir.breaks <- c(-dirres/2,
+                  seq(dirres/2, 360-dirres/2, by = dirres),
+                  360+dirres/2)  
+  dir.labels <- c(paste(360-dirres/2,"-",dirres/2),
+                  paste(seq(dirres/2, 360-3*dirres/2, by = dirres),
+                        "-",
+                        seq(3*dirres/2, 360-dirres/2, by = dirres)),
+                  paste(360-dirres/2,"-",dirres/2))
+  # assign each wind direction to a bin
+  dir.binned <- cut(data[[dir]],
+                    breaks = dir.breaks,
+                    ordered_result = TRUE)
+  levels(dir.binned) <- dir.labels
+  data$dir.binned <- dir.binned
+  
+  # Run debug if required ----
+  if (debug>0){    
+    cat(dir.breaks,"\n")
+    cat(dir.labels,"\n")
+    cat(levels(dir.binned),"\n")
+    
+  }  
+  
+  # create the plot ----
+  p.windrose <- ggplot(data = data,
+                       aes(x = dir.binned,
+                           fill = spd.binned)) +
+    geom_bar() + 
+    scale_x_discrete(drop = FALSE,
+                     labels = waiver()) +
+    coord_polar(start = -((dirres/2)/360) * 2*pi) +
+    scale_fill_manual(name = "Wind Speed (m/s)", 
+                      values = spd.colors,
+                      drop = FALSE) +
+    theme(axis.title.x = element_blank())
+  
+  # adjust axes if required
+  if (!is.na(countmax)){
+    p.windrose <- p.windrose +
+      ylim(c(0,countmax))
+  }
+  
+  # print the plot
+  print(p.windrose)  
+  
+  # return the handle to the wind rose
+  return(p.windrose)
+}
+rass <- vedur$month=='April' & vedur$year==2014
+p <- plot.windrose(spd = vedur$Vindur..m.s.[rass],
+                   dir = vedur$Vindatt..deg.[rass])
+
+p.wr2 <- plot.windrose(data = vedur,
+                       spd = "Vindur..m.s.",
+                       dir = "Vindatt..deg.")
+# now generate the faceting
+library(plotly)
+p.wr3 <- p.wr2 + facet_wrap(~month,ncol = 4)
+
+p <- plot_ly(vedur, r = vedur$Vindatt..deg.[rass], t = vedur$Vindur..m.s.[rass], color = cols, type = "area")
+layout(p, radialaxis = list(ticksuffix = "%"), orientation = 270)
+
+
+
+```
+
+
+
+
+```{r}
+
+#windContours
+windContours <- function (hour = hour, 
+                          wd = wd, 
+                          ws = ws,
+                          add.var,
+                          smooth.contours = 1.2,
+                          smooth.fill = 1.2,
+                          spacing = 2,
+                          centre = "S",
+                          speedlim = 25,
+                          labels = T,
+                          stripname = "",
+                          keytitle = "",
+                          key.spacing = 2,
+                          contint,
+                          contspacing = 1,
+                          levint,
+                          levspacing = 1,
+                          ncuts = 0.1,
+                          gapcolor = "grey50",
+                          colour = brewer.pal(9, "Greys"),
+                          ...) {
+  
+  
+  stopifnot(require("latticeExtra"))
+  stopifnot(require("fields"))
+  stopifnot(require("abind"))
+  stopifnot(require("gridBase"))
+  stopifnot(require("RColorBrewer"))
+  
+  cols <- colorRampPalette(colour)
+  
+  dircat_s <- ordered(ceiling(wd/10), levels=1:36, labels=1:36)
+  dircat_n <- ordered(ceiling(wd/10), levels=c(19:36, 1:18), labels=1:36)
+  dircat_w <- ordered(ceiling(wd/10), levels=c(10:36, 1:9), labels=1:36)
+  dircat_e <- ordered(ceiling(wd/10), levels=c(28:36, 1:27), labels=1:36)
+  
+  dircat <- {if (centre=="N") dircat_n else
+    if (centre=="E") dircat_e else
+      if (centre=="S") dircat_s else
+        dircat_w }
+  
+  labels_s <- c(45,90,135,180,225,270,315,360)
+  labels_n <- c(225,270,315,360,45,90,135,180)
+  labels_e <- c(315,360,45,90,135,180,225,270)
+  labels_w <- c(135,180,225,270,315,360,45,90)
+  
+  label <- {if (centre=="N") labels_n else
+    if (centre=="E") labels_e else
+      if (centre=="S") labels_s else
+        labels_w }
+  
+  tab.wd <- xtabs(~ dircat + hour)
+  tab.wd_smooth <- image.smooth(tab.wd, theta = smooth.contours, 
+                                xwidth = 0, ywidth = 0)
+  
+  freq.wd <- matrix(prop.table(tab.wd_smooth$z,2)[, 24:1]*100,
+                    nrow=36,ncol=24)
+  
+  tab.add <- if (missing(add.var)) tab.wd else
+    xtabs(add.var ~ dircat + hour) / tab.wd
+  
+  tab.add_smooth <- image.smooth(tab.add, theta = smooth.fill, 
+                                 xwidth = 0, ywidth = 0)
+  
+  mat.add <- if (missing(add.var)) 
+    matrix(prop.table(tab.add_smooth$z, 2)[, 24:1] * 100, 
+           nrow = 36, ncol = 24) else
+             tab.add_smooth$z[, 24:1]
+  
+  #if (missing(add.var)) levint <- contint
+  
+  zlevs.fill <- if (missing(levint)) seq(floor(min(mat.add)), 
+                                         ceiling(max(mat.add)),
+                                         by = ncuts)
+  else seq(levint[1], levint[2], by = ncuts)
+  
+  zlevs.conts <- if (missing(contint)) seq(floor(min(freq.wd)), 
+                                           ceiling(max(freq.wd)),
+                                           by = spacing)
+  else seq(contint[1], contint[2], by = spacing)
+  
+  panel.filledcontour <- function(x, y, z, subscripts, at, fill.cont = T,
+                                  col.regions = cols, 
+                                  contours = T, 
+                                  col = col.regions(length(zlevs.fill)), 
+                                  ...)
+  {
+    stopifnot(require("gridBase"))
+    z <- matrix(z[subscripts],
+                nrow = length(unique(x[subscripts])),
+                ncol = length(unique(y[subscripts])))
+    if (!is.double(z)) storage.mode(z) <- "double"
+    opar <- par(no.readonly = TRUE)
+    on.exit(par(opar))
+    if (panel.number() > 1) par(new = TRUE)
+    par(fig = gridFIG(), omi = c(0, 0, 0, 0), mai = c(0, 0, 0, 0))
+    cpl <- current.panel.limits()
+    plot.window(xlim = cpl$xlim, ylim = cpl$ylim,
+                log = "", xaxs = "i", yaxs = "i")
+    # paint the color contour regions
+    if (isTRUE(fill.cont)) 
+      .filled.contour(as.double(do.breaks(cpl$xlim, 
+                                          nrow(z) - 1)),
+                      as.double(do.breaks(cpl$ylim, 
+                                          ncol(z) - 1)),
+                      z, levels = as.double(zlevs.fill), 
+                      col = col)
+    else NULL
+    if (isTRUE(fill.cont)) 
+      .filled.contour(as.double(do.breaks(cpl$xlim, 
+                                          nrow(z) - 1)),
+                      as.double(do.breaks(cpl$ylim, 
+                                          ncol(z) - 1)),
+                      z, levels = as.double(seq(0,0.2,0.1)), 
+                      col = gapcolor)
+    else NULL
+    #add contour lines
+    if (isTRUE(contours)) 
+      contour(as.double(do.breaks(cpl$xlim, nrow(z) - 1)),
+              as.double(do.breaks(cpl$ylim, ncol(z) - 1)),
+              z, levels = as.double(zlevs.conts), 
+              add=T,
+              col = "grey10", # color of the lines
+              drawlabels = labels  # add labels or not
+      )
+    else NULL
+    if (isTRUE(contours))
+      contour(as.double(do.breaks(cpl$xlim, nrow(z) - 1)),
+              as.double(do.breaks(cpl$ylim, ncol(z) - 1)),
+              z, levels = as.double(0.5), 
+              add=T,
+              col = "grey10", lty = 3,# color of the lines
+              drawlabels = labels  # add labels or not
+      )
+    else NULL
+  }
+  
+  out.fill <- levelplot(mat.add, 
+                        panel = function(fill.cont, contours, ...) {
+                          grid.rect(gp=gpar(col=NA, fill=gapcolor))
+                          panel.filledcontour(fill.cont = T, 
+                                              contours = F, ...)
+                        },
+                        col.regions = cols,
+                        plot.args = list(newpage = FALSE))
+  
+  out.conts <- levelplot(freq.wd, 
+                         panel = function(fill.cont, contours, ...) {
+                           panel.filledcontour(fill.cont = F, 
+                                               contours = T, ...)
+                         },
+                         col.regions = cols,
+                         plot.args = list(newpage = FALSE),
+                         colorkey = list(space = "top", at = zlevs.fill, 
+                                         width = 1, height = 0.75, 
+                                         labels = 
+                                           list(at = 
+                                                  seq(zlevs.fill[1],
+                                                      zlevs.fill[length(zlevs.fill)],
+                                                      key.spacing),
+                                                cex = 0.7),
+                                         col = cols))
+  
+  out.speed <- bwplot(rev(hour) ~ ws, xlim = c(-0.25, speedlim), 
+                      ylim = 24.5:0.5, scales = list(x = list(draw = T), 
+                                                     y=list(draw = F)), 
+                      xlab = NULL, ylab = NULL)
+  
+  out.blank <- xyplot(hour ~ ws, xlim = c(-0.5, speedlim), ylim = 24.5:0.5, 
+                      scales = list(x = list(draw = T), y=list(draw= F )), 
+                      xlab = NULL, ylab = NULL, type = "n")
+  
+  addvar.combo <- c(out.fill, out.blank, x.same = F, y.same = F)
+  addvar.out <- update(addvar.combo, layout = c(2, 1))
+  conts.combo <- c(out.conts, out.speed, x.same = F, y.same = F)
+  
+  out.global <- update(conts.combo, layout = c(2, 1), strip = F, 
+                       strip.left = strip.custom(
+                         bg = "grey40", par.strip.text = list(col = "white", 
+                                                              font = 2), 
+                         strip.names = F, strip.levels = T, 
+                         factor.levels = c("A", stripname)),
+                       scales = list(x = list(draw = F), y = list(draw = F)),
+                       par.settings = list(
+                         layout.heights = list(axis.xlab.padding = 6), 
+                         layout.widths = list(strip.left = c(0, 1)),
+                         plot.symbol = list(pch = "*", col = "black"), 
+                         box.umbrella = list(lty = 1, col = "grey40"),
+                         box.rectangle = list(col = "grey40")),
+                       pch = 20, fill = "grey70", cex = 0.7,
+                       xlab = list(c("Direction [degrees]", 
+                                     "Speed [m/s]"), cex = 1), 
+                       ylab = "Hour\n\n", main = list(keytitle, cex = 1))
+  
+  y.at <- seq(22, 3, -3)
+  y.labs <- seq(3, 21, 3)
+  
+  axislabGLOBAL <-  function() {  
+    trellis.focus("panel", 1, 1, clip.off = T, highlight = F)
+    panel.axis(side = "bottom", outside = T, at = seq(4.5, 36 ,by = 4.5), 
+               labels = label, text.cex = 0.8)
+    panel.axis(side = "left", outside = T, at = y.at, labels = y.labs, 
+               text.cex = 0.8, check.overlap = T)
+    trellis.focus("panel", 2, 1, clip.off = T, highlight = F)
+    panel.axis(side = "bottom", outside = T, 
+               at = pretty(0:speedlim), rot = 0,
+               labels = pretty(0:speedlim), text.cex = 0.8)
+    panel.axis(side = "right", outside = T, at = y.at, labels = NULL, 
+               text.cex = 0.8)
+    trellis.unfocus()
+  }
+  
+  par(bg = "white")
+  plot.new()
+  print(out.global + as.layer(addvar.out, x.same = F, y.same = T, 
+                              axes = NULL, under = T))
+  axislabGLOBAL()
+}
+
+```
+
+
+
+
+```{r}
+#rass <- vedur$month=='June' | vedur$month=='July' | vedur$month=='August' & vedur$year==2017
+rass <- vedur$month=='jan.'
+windContours(hour = vedur$klst[rass],
+             wd = vedur$Vindatt..deg.[rass],
+             ws = vedur$Vindur..m.s.[rass],
+             keytitle = "hourly wind frequencies [%]")
+
+windContours(hour = vedur$klst,
+             wd = vedur$Vindatt..deg.,
+             ws = vedur$Vindur..m.s.,
+             keytitle = "hourly wind frequencies [%]")
+
+# Gerir mynd fyrir hvern m??nu??
+lapply(split(vedur,vedur$month,drop = T),function(x) windContours(hour=x$klst,wd = x$Vindatt..deg.,ws = x$Vindur..m.s.,keytitle=paste("hourly wind frequencies [%]",unique(x$month),sep = ' ')))
+
+
+#B??r til myndir fyrir hvern dag ?? wd-m??ppunni:
+for(i in 1:length(levels(vedur$month))){ lapply(split(vedur,vedur$month,drop = T),function(x) c(png(filename=paste(paste(i,"hwf",sep = '-'),'png',sep = '.'),12,7,"cm",pointsize=6,res=900), windContours(hour=x$klst,wd = x$Vindatt..deg.,ws = x$Hvida..m.s.,keytitle=paste("T????ni [%] vind??ttar ?? klst.",unique(x$month),sep = ' ')), dev.off()))}
+
+
+lapply(split(vedur,vedur$month,drop = T),function(x) c(png(filename=paste(paste("hwf",unique(x$month),sep = '-'),'png',sep = '.'),12,7,"cm",pointsize=6,res=900), windContours(hour=x$klst,wd = x$Vindatt..deg.,ws = x$Vindur..m.s.,keytitle=paste("hourly wind frequencies [%]",unique(x$month),sep = ' ')), dev.off()))
+
+df <- data.frame(A=runif(120),B=rep(month.abb,10),C=rep(1:5,24))
+lapply(split(df,df$C), function(x) c(png(),plot(x$B,x$A),dev.off()))
+
+```
+
