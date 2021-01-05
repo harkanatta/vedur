@@ -10,7 +10,7 @@ Sys.setlocale("LC_TIME", "Icelandic")
 #vedrid <- rbind(read.csv('D:/valtyr/veðrið/Skags_08112010-27072013.csv'),read.csv('D:/valtyr/veðrið/Skags_27072013-27072016.csv'),read.csv('D:/valtyr/veðrið/Skags_27072016-19032017.csv'),read.csv('D:/valtyr/veðrið/Skags_19032017-27112017.csv'),read.csv('D:/valtyr/veðrið/27112017-04032018.csv'))
 #vedur <- vedrid
 
-vedur <- read.csv('Skagastr&ouml;nd_01102019-14012020.csv',header = T,sep = "\t")
+vedur <- read.csv('Skagastr&ouml;nd_01012020-31122020.txt',header = T,sep = "\t")
 vedur$dags <- strptime(vedur$Timabil, "%H:%M %d.%m.%Y")
 #vedur$dags2 <- strptime(vedur$Timabil, "%d/%m/%Y %H:%M")
 vedur$dagsw <- ifelse(is.na(as.Date(as.character(vedur$Timabil),"%H:%M %d.%m.%Y")),as.character.Date(vedur$dags2),as.character.Date(vedur$dags))
@@ -53,7 +53,7 @@ library('plyr')
 library('plotrix')
 library(RColorBrewer)
 plot(ddply(vedur,.(month),summarize,'m/s'=mean(Vindur..m.s.)),type='p')
-plot(ddply(vedur[vedur$month=='feb.',],.(year),summarize,'m/s'=mean(Vindur..m.s.)),type='p')
+plot(ddply(vedur[vedur$month=='jan.',],.(year),summarize,'m/s'=mean(Vindur..m.s.)),type='p')
 
 tapply(vedur$Vindur..m.s. ,vedur$month,mean)
 
@@ -69,16 +69,16 @@ axis(2,at=4:10)
 points(c(medur$`m/s`),  pch=20,type="p", col="black",lwd=1.2,cex=1.6)
 arrows(seq(1,12,1),medur$`m/s`+medur$sderr,seq(1,12,1),medur$`m/s`-medur$sderr,col='black',angle=90,length=0.03, code=3)
 
-png(filename=paste('D:/valtyr/veðrið/','rass','rass',paste('rass','png',sep='.'),sep=''),24,7,"cm",pointsize=6,res=1800)
-plot(df.dagar$A,rownames(df.dagar),type='n',xlab='',ylab='',xaxt='n',yaxt='n',axes=F)
-abline(v=df.dagar$A[df.dagar$solar=='myrkur'],col=col1,lwd=0.1)
-par(new=TRUE)
-plot(c(1:12),seq(3,11,8/11),type="n",xlab="", ylab="metrar á sek.", main='Meðalvindur á Skagaströnd',axes=FALSE)
-axis(1, at=1:12, lab=medur$month)
-axis(2,at=4:10)
-points(c(medur$`m/s`),  pch=20,type="p", col="black",lwd=1.2,cex=1.6)
-arrows(seq(1,12,1),medur$`m/s`+medur$sderr,seq(1,12,1),medur$`m/s`-medur$sderr,col='black',angle=90,length=0.03, code=3)
-dev.off()
+#png(filename="vedur.png",24,7,"cm",pointsize=6,res=1800)
+#plot(df.dagar$A,rownames(df.dagar),type='n',xlab='',ylab='',xaxt='n',yaxt='n',axes=F)
+#abline(v=df.dagar$A[df.dagar$solar=='myrkur'],col=col1,lwd=0.1)
+#par(new=TRUE)
+#plot(c(1:12),seq(3,11,8/11),type="n",xlab="", ylab="metrar á sek.", main='Meðalvindur á Skagaströnd',axes=FALSE)
+#axis(1, at=1:12, lab=medur$month)
+#axis(2,at=4:10)
+#points(c(medur$`m/s`),  pch=20,type="p", col="black",lwd=1.2,cex=1.6)
+#arrows(seq(1,12,1),medur$`m/s`+medur$sderr,seq(1,12,1),medur$`m/s`-medur$sderr,col='black',angle=90,length=0.03, code=3)
+#dev.off()
 
 # xvals <- tapply(medur1$month,medur1$year,function(x) return(x))
 # yvals <- tapply(medur1$vindur ,medur1$year,function(x) return(x))
@@ -215,7 +215,7 @@ plot.windrose <- function(data,
   # return the handle to the wind rose
   return(p.windrose)
 }
-rass <- vedur$month=='April' & vedur$year==2014
+rass <- vedur$month=='apr.' & vedur$year==2020
 p <- plot.windrose(spd = vedur$Vindur..m.s.[rass],
                    dir = vedur$Vindatt..deg.[rass])
 
@@ -226,7 +226,7 @@ p.wr2 <- plot.windrose(data = vedur,
 library(plotly)
 p.wr3 <- p.wr2 + facet_wrap(~month,ncol = 4)
 
-p <- plot_ly(vedur, r = vedur$Vindatt..deg.[rass], t = vedur$Vindur..m.s.[rass], color = cols, type = "area")
+p <- plot_ly(vedur, r = vedur$Vindatt..deg.[rass], t = vedur$Vindur..m.s.[rass], type = "area")
 layout(p, radialaxis = list(ticksuffix = "%"), orientation = 270)
 
 
@@ -476,12 +476,12 @@ windContours(hour = vedur$klst,
              ws = vedur$Vindur..m.s.,
              keytitle = "hourly wind frequencies [%]")
 
-# Gerir mynd fyrir hvern m??nu??
+# Gerir mynd fyrir hvern mánuð
 lapply(split(vedur,vedur$month,drop = T),function(x) windContours(hour=x$klst,wd = x$Vindatt..deg.,ws = x$Vindur..m.s.,keytitle=paste("hourly wind frequencies [%]",unique(x$month),sep = ' ')))
 
 
-#B??r til myndir fyrir hvern dag ?? wd-m??ppunni:
-for(i in 1:length(levels(vedur$month))){ lapply(split(vedur,vedur$month,drop = T),function(x) c(png(filename=paste(paste(i,"hwf",sep = '-'),'png',sep = '.'),12,7,"cm",pointsize=6,res=900), windContours(hour=x$klst,wd = x$Vindatt..deg.,ws = x$Hvida..m.s.,keytitle=paste("T????ni [%] vind??ttar ?? klst.",unique(x$month),sep = ' ')), dev.off()))}
+#Býr til myndir fyrir hvern dag í wd-möppunni:
+for(i in 1:length(levels(vedur$month))){ lapply(split(vedur,vedur$month,drop = T),function(x) c(png(filename=paste(paste(i,"hwf",sep = '-'),'png',sep = '.'),12,7,"cm",pointsize=6,res=900), windContours(hour=x$klst,wd = x$Vindatt..deg.,ws = x$Hvida..m.s.,keytitle=paste("Tíðni [%] vindáttar á klst.",unique(x$month),sep = ' ')), dev.off()))}
 
 
 lapply(split(vedur,vedur$month,drop = T),function(x) c(png(filename=paste(paste("hwf",unique(x$month),sep = '-'),'png',sep = '.'),12,7,"cm",pointsize=6,res=900), windContours(hour=x$klst,wd = x$Vindatt..deg.,ws = x$Vindur..m.s.,keytitle=paste("hourly wind frequencies [%]",unique(x$month),sep = ' ')), dev.off()))
