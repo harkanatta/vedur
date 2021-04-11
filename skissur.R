@@ -213,17 +213,20 @@ vedur %>% ddply(.(dags2),summarize,'°C'=round(max(Hvida..m.s.),1)) %>%
 
 
 
+#############
+rass <- list()
+A <- list.files("C:/Users/BioPol VS/Documents/Vinnumappa/Vedur/github/vedur/skjol", full.names = T)
+for (i in 1:length(A)) {
+  rass[[i]] <- readr::read_delim(A[i], delim = "\t", locale = locale(decimal_mark = ","), trim_ws = TRUE, col_types = cols(
+    `Timabil` = col_datetime(format = "%H:%M %d.%m.%Y"))) 
+  print(str(rass[i]))
+}
+
+DF <- do.call(rbind,rass)
 
 
-
-
-
-
-
-
-
-
-
+df <- DF %>%   mutate(year = format(Timabil, "%Y")) %>%
+  group_by(year)
 
 
 dates <- seq.Date(as.Date("2017-01-01"), as.Date("2018-12-31"), by = "day")

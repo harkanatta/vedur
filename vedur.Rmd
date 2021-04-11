@@ -10,7 +10,7 @@ Sys.setlocale("LC_TIME", "Icelandic")
 #vedrid <- rbind(read.csv('D:/valtyr/veðrið/Skags_08112010-27072013.csv'),read.csv('D:/valtyr/veðrið/Skags_27072013-27072016.csv'),read.csv('D:/valtyr/veðrið/Skags_27072016-19032017.csv'),read.csv('D:/valtyr/veðrið/Skags_19032017-27112017.csv'),read.csv('D:/valtyr/veðrið/27112017-04032018.csv'))
 #vedur <- vedrid
 
-vedur <- read.csv('Skagastr&ouml;nd_01012020-31122020.txt',header = T,sep = "\t")
+vedur <- read.csv('skjol/Skagastr&ouml;nd_01012020-31122020.txt',header = T,sep = "\t")
 vedur$dags <- strptime(vedur$Timabil, "%H:%M %d.%m.%Y")
 #vedur$dags2 <- strptime(vedur$Timabil, "%d/%m/%Y %H:%M")
 vedur$dagsw <- ifelse(is.na(as.Date(as.character(vedur$Timabil),"%H:%M %d.%m.%Y")),as.character.Date(vedur$dags2),as.character.Date(vedur$dags))
