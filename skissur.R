@@ -214,6 +214,12 @@ vedur %>% ddply(.(dags2),summarize,'°C'=round(max(Hvida..m.s.),1)) %>%
 
 
 #############
+sysfonts::font_add_google("Montserrat", "Montserrat")
+sysfonts::font_add_google("Sacramento", "Sacramento")
+sysfonts::font_add_google("Catamaran", "Catamaran")
+showtext::showtext_auto()
+
+
 rass <- list()
 A <- list.files("C:/Users/BioPol VS/Documents/Vinnumappa/Vedur/github/vedur/skjol", full.names = T)
 for (i in 1:length(A)) {
@@ -225,10 +231,59 @@ for (i in 1:length(A)) {
 DF <- do.call(rbind,rass)
 
 
-df <- DF %>%   mutate(year = format(Timabil, "%Y")) %>%
-  group_by(year)
+df <- DF %>%   mutate(manudur = format(Timabil, "%m"),
+                      man = format(Timabil, "%b")) %>%
+  group_by(manudur)
+df$manudur = factor(format(strptime(df$Timabil,'%Y-%m-%d'),'%b'), levels=format(ISOdate(2000, 1:12, 1), "%b"), ordered=TRUE)
+
+p.wr2 <- plot.windrose(data = df,
+                       spd = "Vindur (m/s)",
+                       dir = "Vindatt (deg)")
+p <- p.wr2 + facet_wrap(~manudur, nrow = 3) +
+  patchwork::plot_annotation(
+    title = "Costa del Skagaströnd",
+    subtitle = "Tíðni vindátta á Skagaströnd (2011-2020)",
+    caption = "Gögn: www.mogt.is",
+    theme = theme(plot.title = element_text(size = 30,
+                                            hjust=0.5,
+                                            vjust = -0.1,
+                                            family="Sacramento"),
+                  plot.subtitle = element_text(size = 15,
+                                               hjust=0.5,
+                                               vjust= -0.1,
+                                               family="Montserrat"),
+                  plot.caption = element_text(size = 12,
+                                              family="Catamaran"),
+                  plot.background = element_rect(fill = NA, colour = 'black', size = 3))
+  )
+####
+  ggsave("CostadelSkags.png", p, height=5, width=5, dpi=150)
+  ggsave("CostadelSkags.pdf", p, device = "pdf", height=5, width=5, dpi=150)
 
 
+
+  
+ df <- DF %>%  mutate(hour = format(Timabil, "%H"),
+                 manudur = format(Timabil, "%b"),
+                 manudurstor = format(Timabil, "%B")) %>% 
+    filter(manudur == 'júl.')
+  
+ png(filename=paste(paste("Tidni",unique(df$manudurstor),sep = '-'),'png',sep = '.'),12,7,"cm",pointsize=16,res=200, family = "Sacramento")
+  windContours(hour = df$hour,
+               wd = df$`Vindatt (deg)`,
+               ws = df$`Vindur (m/s)`,
+               keytitle = paste(paste("Tíðni vinda á tíma dags í",unique(df$manudurstor),sep = " "),'[%] 2011-2020', sep = ' ' ))
+dev.off()
+
+
+
+pal <- hp(n = 128, house = "Hufflepuff")
+image(tab.wd_smooth, col = pal)
+
+
+
+
+library(echarts4r)
 dates <- seq.Date(as.Date("2017-01-01"), as.Date("2018-12-31"), by = "day")
 values <- rnorm(length(dates), 20, 6)
 

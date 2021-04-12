@@ -6,8 +6,8 @@ output:
 ---
 
 ```{r}
-Sys.setlocale("LC_TIME", "Icelandic")
-#vedrid <- rbind(read.csv('D:/valtyr/veðrið/Skags_08112010-27072013.csv'),read.csv('D:/valtyr/veðrið/Skags_27072013-27072016.csv'),read.csv('D:/valtyr/veðrið/Skags_27072016-19032017.csv'),read.csv('D:/valtyr/veðrið/Skags_19032017-27112017.csv'),read.csv('D:/valtyr/veðrið/27112017-04032018.csv'))
+Sys.setlocale("LC_ALL", "Icelandic")
+# vedrid <- rbind(read.csv('D:/valtyr/veðrið/Skags_08112010-27072013.csv'),read.csv('D:/valtyr/veðrið/Skags_27072013-27072016.csv'),read.csv('D:/valtyr/veðrið/Skags_27072016-19032017.csv'),read.csv('D:/valtyr/veðrið/Skags_19032017-27112017.csv'),read.csv('D:/valtyr/veðrið/27112017-04032018.csv'))
 #vedur <- vedrid
 
 vedur <- read.csv('skjol/Skagastr&ouml;nd_01012020-31122020.txt',header = T,sep = "\t")
@@ -198,10 +198,11 @@ plot.windrose <- function(data,
     scale_x_discrete(drop = FALSE,
                      labels = waiver()) +
     coord_polar(start = -((dirres/2)/360) * 2*pi) +
-    scale_fill_manual(name = "Wind Speed (m/s)", 
+    scale_fill_manual(name = "Vindhraði (m/s)", 
                       values = spd.colors,
                       drop = FALSE) +
-    theme(axis.title.x = element_blank())
+    theme(axis.title.x = element_blank()) +
+    theme_minimal()
   
   # adjust axes if required
   if (!is.na(countmax)){
@@ -258,7 +259,7 @@ windContours <- function (hour = hour,
                           levspacing = 1,
                           ncuts = 0.1,
                           gapcolor = "grey50",
-                          colour = brewer.pal(9, "Greys"),
+                          colour = harrypotter::hp(9,house = "Hufflepuff"),
                           ...) {
   
   
@@ -429,9 +430,9 @@ windContours <- function (hour = hour,
                          box.umbrella = list(lty = 1, col = "grey40"),
                          box.rectangle = list(col = "grey40")),
                        pch = 20, fill = "grey70", cex = 0.7,
-                       xlab = list(c("Direction [degrees]", 
-                                     "Speed [m/s]"), cex = 1), 
-                       ylab = "Hour\n\n", main = list(keytitle, cex = 1))
+                       xlab = list(c("Vindátt [gráður]", 
+                                     "Vindhraði [m/s]"), cex = 1), 
+                       ylab = "Klukkan\n\n", main = list(keytitle, cex = 1))
   
   y.at <- seq(22, 3, -3)
   y.labs <- seq(3, 21, 3)

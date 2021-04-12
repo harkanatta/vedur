@@ -1,9 +1,9 @@
 plot.windrose <- function(data,
                           spd,
                           dir,
-                          spdres = 2,
+                          spdres = 5,
                           dirres = 30,
-                          spdmin = 2,
+                          spdmin = 0,
                           spdmax = 20,
                           spdseq = NULL,
                           palette = "YlGnBu",
@@ -42,11 +42,7 @@ plot.windrose <- function(data,
   n.colors.in.range <- n.spd.seq - 1
   
   # create the color map
-  spd.colors <- colorRampPalette(brewer.pal(min(max(3,
-                                                    n.colors.in.range),
-                                                min(9,
-                                                    n.colors.in.range)),                                               
-                                            palette))(n.colors.in.range)
+  spd.colors <- harrypotter::hp(min(max(3,n.colors.in.range),min(9,n.colors.in.range)),house = "Hufflepuff")
   
   if (max(data[[spd]],na.rm = TRUE) > spdmax){    
     spd.breaks <- c(spdseq,
@@ -57,7 +53,7 @@ plot.windrose <- function(data,
                     paste(spdmax,
                           "-",
                           max(data[[spd]],na.rm = TRUE)))
-    spd.colors <- c(spd.colors, "grey50")
+    spd.colors <- c(spd.colors, "red")
   } else{
     spd.breaks <- spdseq
     spd.labels <- paste(c(spdseq[1:n.spd.seq-1]),
