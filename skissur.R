@@ -1,5 +1,5 @@
 
-rass <- read.csv('Skagastr&ouml;nd_01012020-31122020.txt',header = T,sep = "\t")
+rass <- read.csv('skjol/Skagastr&ouml;nd_01012020-31122020.txt',header = T,sep = "\t")
 
 
 library(echarts4r)
@@ -7,9 +7,9 @@ library(magrittr)
 library(plyr)
 library(purrr)
 
-file <- "C:/Users/valty/Documents/vinna/github/vedur/skjol"
-setwd(file)
-files <- list.files(pattern="*.txt")
+# file <- "C:/Users/valty/Documents/vinna/github/vedur/skjol"
+# setwd(file)
+files <- list.files("skjol/",pattern="*.txt",full.names = T)
 vedur <- files %>% map_dfr(read.csv2, sep="\t") 
 
 vedur$dags <- strptime(vedur$Timabil, "%H:%M %d.%m.%Y")
@@ -25,7 +25,7 @@ g <- vedur$year
 l <- split(vedur, g)
 l <- lapply(l, function(x) mean(x$Lofthiti..degC.))
 
-
+library(lubridate)
 
 vedur %>% ddply(.(dags2),summarize,'°C'=round(mean(Lofthiti..degC.),1)) %>% 
   dplyr::mutate(year = format(dags2, "%Y")) %>% # get year from date
@@ -213,25 +213,19 @@ vedur %>% ddply(.(dags2),summarize,'°C'=round(max(Hvida..m.s.),1)) %>%
 
 
 
-#############
+############# Ekki gleyma Sys.setlocale("LC_ALL", "Icelandic")
+library(tidyverse)
 sysfonts::font_add_google("Montserrat", "Montserrat")
 sysfonts::font_add_google("Sacramento", "Sacramento")
 sysfonts::font_add_google("Catamaran", "Catamaran")
 showtext::showtext_auto()
 
 
-rass <- list()
-A <- list.files("C:/Users/BioPol VS/Documents/Vinnumappa/Vedur/github/vedur/skjol", full.names = T)
-for (i in 1:length(A)) {
-  rass[[i]] <- readr::read_delim(A[i], delim = "\t", locale = locale(decimal_mark = ","), trim_ws = TRUE, col_types = cols(
-    `Timabil` = col_datetime(format = "%H:%M %d.%m.%Y"))) 
-  print(str(rass[i]))
-}
-
-DF <- do.call(rbind,rass)
+files <- list.files("skjol/",pattern="*.txt",full.names = T)
+vedur <- files %>% map_dfr(read_delim, delim = "\t", locale = locale(decimal_mark = ","), trim_ws = TRUE, col_types = cols(`Timabil` = col_datetime(format = "%H:%M %d.%m.%Y")))
 
 
-df <- DF %>%   mutate(manudur = format(Timabil, "%m"),
+df <- vedur %>%   mutate(manudur = format(Timabil, "%m"),
                       man = format(Timabil, "%b")) %>%
   group_by(manudur)
 df$manudur = factor(format(strptime(df$Timabil,'%Y-%m-%d'),'%b'), levels=format(ISOdate(2000, 1:12, 1), "%b"), ordered=TRUE)
@@ -257,22 +251,22 @@ p <- p.wr2 + facet_wrap(~manudur, nrow = 3) +
                   plot.background = element_rect(fill = NA, colour = 'black', size = 3))
   )
 ####
-  ggsave("CostadelSkags.png", p, height=5, width=5, dpi=150)
-  ggsave("CostadelSkags.pdf", p, device = "pdf", height=5, width=5, dpi=150)
+#  ggsave("CostadelSkags.png", p, height=5, width=5, dpi=150)
+#  ggsave("CostadelSkags.pdf", p, device = "pdf", height=5, width=5, dpi=150)
 
 
 
   
- df <- DF %>%  mutate(hour = format(Timabil, "%H"),
-                 manudur = format(Timabil, "%b"),
+ df <- vedur %>%  mutate(hour = format(Timabil, "%H"),
+                 manudur = format(Timabil, "%m"),
                  manudurstor = format(Timabil, "%B")) %>% 
-    filter(manudur == 'júl.')
+    filter(manudur == '07')
   
  png(filename=paste(paste("Tidni",unique(df$manudurstor),sep = '-'),'png',sep = '.'),12,7,"cm",pointsize=16,res=200, family = "Sacramento")
   windContours(hour = df$hour,
                wd = df$`Vindatt (deg)`,
                ws = df$`Vindur (m/s)`,
-               keytitle = paste(paste("Tíðni vinda á tíma dags í",unique(df$manudurstor),sep = " "),'[%] 2011-2020', sep = ' ' ))
+               keytitle = paste(paste("Tíðni vinda á Skagaströnd í",unique(df$manudurstor),sep = " "),'[%] 2011-2020', sep = ' ' ))
 dev.off()
 
 
@@ -299,6 +293,63 @@ year %>%
   e_title("Calendar", "Heatmap")%>%
   e_tooltip("item")  
 
+
+
+
+
+temp = data.frame(timestamp = as.Date("2024-02-28") + 0:3)
+temp$weekday = weekdays(temp$timestamp,abbreviate = T)
+temp$timestamp <- format(temp$timestamp,"%d")
+temp
+
+
+
+library(tidyverse)
+library(purrr)
+
+# file <- "C:/Users/valty/Documents/vinna/github/vedur/skjol"
+# setwd(file)
+files <- list.files("skjol/",pattern="*.txt",full.names = T)
+vedur <- files %>% map_dfr(read_delim, delim = "\t", locale = locale(decimal_mark = ","), trim_ws = TRUE, col_types = cols(`Timabil` = col_datetime(format = "%H:%M %d.%m.%Y")))
+
+
+
+
+
+
+
+
+listi[[i]] <- readr::read_delim(A[i], delim = "\t", locale = locale(decimal_mark = ","), trim_ws = TRUE, col_types = cols(`Timabil` = col_datetime(format = "%H:%M %d.%m.%Y"))) 
+
+library(ggplot2)
+
+df <- vedur %>%
+  mutate(manudur = format(Timabil, "%m"),
+         man = factor(format(Timabil, "%b"), 
+                      levels=format(ISOdate(2000, 1:12, 1), "%b"), ordered=TRUE)) %>%
+  group_by(man) %>% 
+  dplyr::summarise(Vindur = mean(`Vindur (m/s)`),
+                   var = var(`Vindur (m/s)`),
+                   sd = sd(`Vindur (m/s)`))
+
+ggplot(df,aes(man,Vindur)) +
+  geom_point(size = 3) +
+  #geom_pointrange(aes(ymin=Vindur-sd, ymax=Vindur+sd)) +
+  geom_errorbar(aes(ymin=Vindur-sd, ymax=Vindur+sd), width=.2,
+                position=position_dodge(0.05)) +
+  ylab("Vindur (m/s)") +
+  xlab("") +
+  theme_minimal()
+
+#
+
+
+ggplot(df, aes(x=man, y=Vindur)) +
+  geom_boxplot()
+
+
++ 
+  geom_pointrange(aes(ymin=Vindur-sd, ymax=Vindur+sd))
 
 
 
