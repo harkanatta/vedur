@@ -295,25 +295,17 @@ year %>%
 
 
 
-
-
-temp = data.frame(timestamp = as.Date("2024-02-28") + 0:3)
-temp$weekday = weekdays(temp$timestamp,abbreviate = T)
-temp$timestamp <- format(temp$timestamp,"%d")
-temp
-
-
-
+#########################################################################
+Sys.setlocale("LC_ALL", "Icelandic")
 library(tidyverse)
 library(purrr)
+library(ggplot2)
 
 # file <- "C:/Users/valty/Documents/vinna/github/vedur/skjol"
 # setwd(file)
 files <- list.files("skjol/",pattern="*.txt",full.names = T)
 vedur <- files %>% purrr::map_dfr(read_delim, delim = "\t", locale = locale(decimal_mark = ","), trim_ws = TRUE, col_types = cols(`Timabil` = col_datetime(format = "%H:%M %d.%m.%Y")))
 
-
-library(ggplot2)
 
 df <- vedur %>%
   mutate(manudur = format(Timabil, "%m"),
@@ -345,12 +337,37 @@ p2 <- ggplot(df,aes(man,Vindur)) +
   theme_minimal()
 #
 
-p3 <- ggplot(df,aes(man,Vindur)) +
-  geom_violin() +
-  geom_point(size = 1) +
-  theme_minimal()
-
-
 library(patchwork)
 
 p1 + p2
+
+
+
+df <- vedur %>%
+  mutate(ar = format(Timabil, "%Y"),
+         manudur = format(Timabil, "%m"),
+         dagur = format(Timabil, "%I"),
+         man = factor(format(Timabil, "%b"), 
+                      levels=format(ISOdate(2000, 1:12, 1), "%b"), ordered=TRUE)) %>%
+  filter(ar!=2021) %>% 
+  group_by(ar, man, dagur) %>% 
+  dplyr::summarise(Vindur = mean(`Vindur (m/s)`))
+
+library(ggbeeswarm)
+litir <- harrypotter::hp(11,house = "hufflepuff")
+library("ggsci")
+
+brewer.pal(n = 8, name = "Dark2")
+
+p3 <- ggplot(df,aes(man,Vindur, color=ar)) +
+  #geom_violin(draw_quantiles = c(0.25, 0.5, 0.75)) +
+  #geom_violin(position = position_dodge(width = 0.9)) +
+  #geom_quasirandom(dodge.width = 0.9, varwidth = TRUE) +
+  geom_beeswarm(alpha=.7,size=2,priority='none') +
+  #harrypotter::scale_colour_hp_d(option = "Ravenclaw", name = "Ár") +
+  scale_color_d3() +
+  ylab("Vindur (m/s)") +
+  xlab("") +
+  theme_minimal()
+p3
+ggsave("vindurManKlstAr.pdf", p3, device = "pdf", height=7, width=12, dpi=150)
