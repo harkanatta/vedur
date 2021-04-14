@@ -310,30 +310,24 @@ library(purrr)
 # file <- "C:/Users/valty/Documents/vinna/github/vedur/skjol"
 # setwd(file)
 files <- list.files("skjol/",pattern="*.txt",full.names = T)
-vedur <- files %>% map_dfr(read_delim, delim = "\t", locale = locale(decimal_mark = ","), trim_ws = TRUE, col_types = cols(`Timabil` = col_datetime(format = "%H:%M %d.%m.%Y")))
+vedur <- files %>% purrr::map_dfr(read_delim, delim = "\t", locale = locale(decimal_mark = ","), trim_ws = TRUE, col_types = cols(`Timabil` = col_datetime(format = "%H:%M %d.%m.%Y")))
 
-
-
-
-
-
-
-
-listi[[i]] <- readr::read_delim(A[i], delim = "\t", locale = locale(decimal_mark = ","), trim_ws = TRUE, col_types = cols(`Timabil` = col_datetime(format = "%H:%M %d.%m.%Y"))) 
 
 library(ggplot2)
 
 df <- vedur %>%
   mutate(manudur = format(Timabil, "%m"),
+         dagur = format(Timabil, "%d"),
          man = factor(format(Timabil, "%b"), 
                       levels=format(ISOdate(2000, 1:12, 1), "%b"), ordered=TRUE)) %>%
-  group_by(man) %>% 
+  group_by(man,dagur) %>% 
   dplyr::summarise(Vindur = mean(`Vindur (m/s)`),
                    var = var(`Vindur (m/s)`),
-                   sd = sd(`Vindur (m/s)`))
+                   sd = sd(`Vindur (m/s)`),
+                   stderror = plotrix::std.error(`Vindur (m/s)`))
 
-ggplot(df,aes(man,Vindur)) +
-  geom_point(size = 3) +
+p1 <- ggplot(df,aes(man,Vindur)) +
+  geom_point(size = 1) +
   #geom_pointrange(aes(ymin=Vindur-sd, ymax=Vindur+sd)) +
   geom_errorbar(aes(ymin=Vindur-sd, ymax=Vindur+sd), width=.2,
                 position=position_dodge(0.05)) +
@@ -341,16 +335,22 @@ ggplot(df,aes(man,Vindur)) +
   xlab("") +
   theme_minimal()
 
+p2 <- ggplot(df,aes(man,Vindur)) +
+  geom_point(size = 1) +
+  #geom_pointrange(aes(ymin=Vindur-sd, ymax=Vindur+sd)) +
+  geom_errorbar(aes(ymin=Vindur-var, ymax=Vindur+var), width=.2,
+                position=position_dodge(0.05)) +
+  ylab("Vindur (m/s)") +
+  xlab("") +
+  theme_minimal()
 #
 
-
-ggplot(df, aes(x=man, y=Vindur)) +
-  geom_boxplot()
-
-
-+ 
-  geom_pointrange(aes(ymin=Vindur-sd, ymax=Vindur+sd))
+p3 <- ggplot(df,aes(man,Vindur)) +
+  geom_violin() +
+  geom_point(size = 1) +
+  theme_minimal()
 
 
+library(patchwork)
 
-
+p1 + p2

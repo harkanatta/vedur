@@ -42,7 +42,7 @@ plot.windrose <- function(data,
   n.colors.in.range <- n.spd.seq - 1
   
   # create the color map
-  spd.colors <- harrypotter::hp(min(max(3,n.colors.in.range),min(9,n.colors.in.range)),house = "Hufflepuff")
+  spd.colors <- rev(harrypotter::hp(min(max(3,n.colors.in.range),min(9,n.colors.in.range)),house = "Hufflepuff"))
   
   if (max(data[[spd]],na.rm = TRUE) > spdmax){    
     spd.breaks <- c(spdseq,
