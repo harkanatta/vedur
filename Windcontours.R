@@ -18,7 +18,7 @@ windContours <- function (hour = hour,
                           levspacing = 1,
                           ncuts = 0.1,
                           gapcolor = "grey50",
-                          colour = rev(harrypotter::hp(9,house = "Hufflepuff")),
+                          colour = harrypotter::hp(9,house = "NewtScamander"),
                           ...) {
   
   
