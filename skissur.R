@@ -256,18 +256,21 @@ p <- p.wr2 + facet_wrap(~manudur, nrow = 3) +
 
 
 
+for (i in c("01", "12", "11", "10", "09", "08", "07", "06", "05", "04", "03", "02")) {
   
+
  df <- vedur %>%  mutate(hour = format(Timabil, "%H"),
                  manudur = format(Timabil, "%m"),
                  manudurstor = format(Timabil, "%B")) %>% 
-    filter(manudur == '07')
-  
- png(filename=paste(paste("Tidni",unique(df$manudurstor),sep = '-'),'png',sep = '.'),12,7,"cm",pointsize=16,res=200, family = "Sacramento")
+    filter(manudur == i)
+
+ png(filename=paste(paste(i,"tidni",sep = '-'),'png',sep = '.'),12,7,"cm",pointsize=16,res=200, family = "Sacramento")
   windContours(hour = df$hour,
                wd = df$`Vindatt (deg)`,
                ws = df$`Vindur (m/s)`,
                keytitle = paste(paste("Tíðni vinda á Skagaströnd í",unique(df$manudurstor),sep = " "),'[%] 2011-2020', sep = ' ' ))
 dev.off()
+}
 
 
 
@@ -312,26 +315,29 @@ df <- vedur %>%
          dagur = format(Timabil, "%d"),
          man = factor(format(Timabil, "%b"), 
                       levels=format(ISOdate(2000, 1:12, 1), "%b"), ordered=TRUE)) %>%
-  group_by(man,dagur) %>% 
+  #group_by(man,dagur) %>% 
+  group_by(man) %>% 
   dplyr::summarise(Vindur = mean(`Vindur (m/s)`),
                    var = var(`Vindur (m/s)`),
                    sd = sd(`Vindur (m/s)`),
                    stderror = plotrix::std.error(`Vindur (m/s)`))
 
 p1 <- ggplot(df,aes(man,Vindur)) +
-  geom_point(size = 1) +
+  geom_point(size = 7) +
   #geom_pointrange(aes(ymin=Vindur-sd, ymax=Vindur+sd)) +
   geom_errorbar(aes(ymin=Vindur-sd, ymax=Vindur+sd), width=.2,
                 position=position_dodge(0.05)) +
+  ggtitle("Standard deviation") +
   ylab("Vindur (m/s)") +
   xlab("") +
   theme_minimal()
 
 p2 <- ggplot(df,aes(man,Vindur)) +
-  geom_point(size = 1) +
+  geom_point(size = 7) +
   #geom_pointrange(aes(ymin=Vindur-sd, ymax=Vindur+sd)) +
   geom_errorbar(aes(ymin=Vindur-var, ymax=Vindur+var), width=.2,
                 position=position_dodge(0.05)) +
+  ggtitle("Variation") +
   ylab("Vindur (m/s)") +
   xlab("") +
   theme_minimal()
@@ -339,8 +345,8 @@ p2 <- ggplot(df,aes(man,Vindur)) +
 
 library(patchwork)
 
-p1 + p2
-
+p1p2 <- p1 + p2
+ggsave("devOGvar.png", p1p2, device = "png", height=7, width=12, dpi=60)
 
 
 df <- vedur %>%
@@ -350,24 +356,50 @@ df <- vedur %>%
          man = factor(format(Timabil, "%b"), 
                       levels=format(ISOdate(2000, 1:12, 1), "%b"), ordered=TRUE)) %>%
   filter(ar!=2021) %>% 
-  group_by(ar, man, dagur) %>% 
+  #group_by(ar, man, dagur) %>% 
+  group_by(man) %>% 
   dplyr::summarise(Vindur = mean(`Vindur (m/s)`))
 
 library(ggbeeswarm)
 litir <- harrypotter::hp(11,house = "hufflepuff")
 library("ggsci")
 
-brewer.pal(n = 8, name = "Dark2")
-
-p3 <- ggplot(df,aes(man,Vindur, color=ar)) +
+#p3 <- ggplot(df,aes(man,Vindur, color=ar)) +
+p3 <- ggplot(df,aes(man,Vindur)) +
   #geom_violin(draw_quantiles = c(0.25, 0.5, 0.75)) +
   #geom_violin(position = position_dodge(width = 0.9)) +
   #geom_quasirandom(dodge.width = 0.9, varwidth = TRUE) +
-  geom_beeswarm(alpha=.7,size=2,priority='none') +
+  geom_beeswarm(alpha=.7,size=7,priority='none') +
   #harrypotter::scale_colour_hp_d(option = "Ravenclaw", name = "Ár") +
   scale_color_d3() +
   ylab("Vindur (m/s)") +
   xlab("") +
   theme_minimal()
 p3
-ggsave("vindurManKlstAr.pdf", p3, device = "pdf", height=7, width=12, dpi=150)
+ggsave("vindurManKlstAr.png", p3, device = "png", height=7, width=12, dpi=100)
+
+
+
+
+
+dir.create("examples")
+setwd("examples")
+# example 1: simple animated countdown from 10 to "GO!".
+png(file="example%02d.png", width=200, height=200)
+for (i in c(10:1, "G0!")){
+  plot.new()
+  text(.5, .5, i, cex = 6)
+}
+dev.off()
+# convert the .png files to one .gif file using ImageMagick. 
+# The system() function executes the command as if it was done
+# in the terminal. the -delay flag sets the time between showing
+# the frames, i.e. the speed of the animation.
+C:/Program Files/ImageMagick-7.0.11-Q16-HDRI
+system('"C:\\Program Files (x86)\\LyX 2.0\\imagemagick\\convert.exe" -delay 20 -loop 0 files_*.png animation.gif')
+system("convert -delay 80 *.png example_1.gif")
+# to not leave the directory with the single jpeg files
+# I remove them.
+file.remove(list.files(pattern=".png"))
+
+
