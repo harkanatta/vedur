@@ -403,3 +403,49 @@ system("convert -delay 80 *.png example_1.gif")
 file.remove(list.files(pattern=".png"))
 
 
+
+
+
+
+
+
+
+
+
+
+# 52 vikur:
+
+
+df <- vedur %>%  mutate(hour = format(Timabil, "%H"),
+                        manudur = format(Timabil, "%W"),
+                        manudurstor = format(Timabil, "%B"))
+
+A <- table(df$manudur)
+B <- (attributes(A)[2])
+
+for (i in B$dimnames[[1]]) {
+  
+  df <- vedur %>%  mutate(hour = format(Timabil, "%H"),
+                          manudur = format(Timabil, "%W"),
+                          manudurstor = format(Timabil, "%B")) %>% 
+  filter(manudur == i)
+  
+  png(filename=paste(paste(i,"tidni",sep = '-'),'png',sep = '.'),12,7,"cm",pointsize=16,res=200, family = "Sacramento")
+  windContours(hour = df$hour,
+               wd = df$`Vindatt (deg)`,
+               ws = df$`Vindur (m/s)`,
+               keytitle = paste(paste("Tíðni vinda á Skagaströnd í",unique(df$manudurstor),sep = " "),'[%] 2011-2020', sep = ' ' ))
+  dev.off()
+}
+
+
+
+
+
+
+
+
+DF <- df[sample(dim(df)[1],100),]
+DF <- DF %>%  mutate(hour = format(Timabil, "%H"),
+                  manudur = format(Timabil, "%W"),
+                  manudurstor = format(Timabil, "%B"))
