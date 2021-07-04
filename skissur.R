@@ -403,3 +403,76 @@ system("convert -delay 80 *.png example_1.gif")
 file.remove(list.files(pattern=".png"))
 
 
+
+
+
+
+
+
+
+
+
+
+
+df <- vedur %>%
+  mutate(ar = format(Timabil, "%Y"),
+         dagur = format(Timabil, "%d"),
+         man = factor(format(Timabil, "%b"), 
+                      levels=format(ISOdate(2000, 1:12, 1), "%b"), ordered=TRUE),
+         att = round(`Vindatt (deg)`* 8 / 360),
+         attir = case_when(
+          att == '0' ~ "N",
+          att == '1' ~ "NA",
+          att == '2' ~ "A",
+          att == '3' ~ "SA",
+          att == '4' ~ "S",
+          att == '5' ~ "SV",
+          att == '6' ~ "V",
+          att == '7' ~ "NV",
+           TRUE ~ "N"
+         )
+  )
+
+p <- df %>%
+  mutate(attir = fct_relevel(attir, 
+                            "N", "NA", "A", 
+                            "SA", "S", "SV", 
+                            "V", "NV")) %>%
+  ggplot(aes(x=man, group=attir, fill=attir)) +
+  geom_density(adjust=1.5, position="fill")
+
+
+# x <- rle(df$attir)
+# z  <- data.frame(x[[2]],x[[1]])
+tapply(rle(df$attir)$lengths,rle(df$attir)$values,FUN=max)
+# z %>% arrange(desc(x..1..))
+rle_x = rle(df$attir)
+
+# Compute endpoints of run
+end = cumsum(rle_x$lengths)
+start = c(1, lag(end)[-1] + 1)
+
+# Display results
+z <- data.frame(start, end)
+z$diff <- z$end-z$start
+z$dagurA <- df$Timabil[start]
+z$dagurB <- df$Timabil[end]
+z$timabil <-  difftime(df$Timabil[start],df$Timabil[end],units = "days")
+z$attir <- df$attir[start]
+z$vindur <- mean(df$`Vindur (m/s)`[])
+z %>% arrange(desc(diff))
+z <- z[z$timabil>=1,]
+rownames(z) <- NULL
+y <- list()
+w <- list()
+t <- list()
+for (i in rownames(z)) {
+  a = z$start[as.numeric(i)]
+  b = z$end[as.numeric(i)]
+  y[i] <- mean(df$`Vindur (m/s)`[a:b])
+  w[i] <- max(df$`Hvida (m/s)`[a:b])
+  t[i] <- mean(df$`Lofthiti (degC)`[a:b])
+}
+z$vindur <- unlist(y)
+z$hvida <- unlist(w)
+z$medalhiti <- unlist(t)
