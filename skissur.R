@@ -515,3 +515,32 @@ DF <- DF %>%  mutate(hour = format(Timabil, "%H"),
                   manudur = format(Timabil, "%W"),
                   manudurstor = format(Timabil, "%B"))
 >>>>>>> 3433c69bffef3bdb1cc8818f8b87d845d37dea4c
+
+
+
+
+df <- vedur %>%
+  mutate(klukka = format(Timabil, "%H"),
+         man = factor(format(Timabil, "%b"), 
+                      levels=format(ISOdate(2000, 1:12, 1), "%b"), ordered=TRUE),
+         att = round(`Vindatt (deg)`* 8 / 360),
+         attir = case_when(
+           att == '0' ~ "N",
+           att == '1' ~ "NA",
+           att == '2' ~ "A",
+           att == '3' ~ "SA",
+           att == '4' ~ "S",
+           att == '5' ~ "SV",
+           att == '6' ~ "V",
+           att == '7' ~ "NV",
+           TRUE ~ "N"
+         ))  %>% 
+  mutate(attir = fct_relevel(attir, 
+                             "N", "NA", "A", 
+                             "SA", "S", "SV", 
+                             "V", "NV"))
+df %>% 
+  filter(man=="júl." & `Vindur (m/s)` < 15)  %>%
+  ggplot(aes(x=`Vindur (m/s)`, after_stat(count), group=attir, fill=attir)) +
+  geom_density(adjust=1.5, position="fill")
+

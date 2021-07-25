@@ -32,7 +32,7 @@ p <- df %>%
                              "N", "NA", "A", 
                              "SA", "S", "SV", 
                              "V", "NV")) %>%
-  ggplot(aes(x=man, group=attir, fill=attir)) +
+  ggplot(aes(x=man, after_stat(count), group=attir, fill=attir)) +
   geom_density(adjust=1.5, position="fill")
 
 #með bakgrunnsmynd
@@ -45,7 +45,8 @@ p2 <- df %>%
   ggplot(aes(x=man, group=attir)) +
   labs(y = "") +
   ggpubr::background_image(img)+
-  geom_density(adjust=1.5, position="fill")
+  geom_density(adjust=1.5, position="fill")+
+  theme_minimal()
 
-ggsave("densityPlot.png", p, height=5, width=7, dpi=150)
-ggsave("bakgrunnur_Vicki.png", p2, height=5, width=7, dpi=150)
+#ggsave("densityPlot.png", p, height=5, width=7, dpi=150)
+#ggsave("bakgrunnur_Vicki.png", p2, height=5, width=7, dpi=150)
