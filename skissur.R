@@ -458,7 +458,7 @@ z <- data.frame(start, end)
 z$diff <- z$end-z$start
 z$dagurA <- df$Timabil[start]
 z$dagurB <- df$Timabil[end]
-z$timabil <-  difftime(df$Timabil[start],df$Timabil[end],units = "days")
+z$timabil <-  round(difftime(df$Timabil[start],df$Timabil[end],units = "days"),1)
 z$attir <- df$attir[start]
 z$vindur <- mean(df$`Vindur (m/s)`[])
 z %>% arrange(desc(diff))
@@ -470,13 +470,15 @@ t <- list()
 for (i in rownames(z)) {
   a = z$start[as.numeric(i)]
   b = z$end[as.numeric(i)]
-  y[i] <- mean(df$`Vindur (m/s)`[a:b])
+  y[i] <- round(mean(df$`Vindur (m/s)`[a:b]),1)
   w[i] <- max(df$`Hvida (m/s)`[a:b])
-  t[i] <- mean(df$`Lofthiti (degC)`[a:b])
+  t[i] <- round(mean(df$`Lofthiti (degC)`[a:b]),1)
 }
 z$vindur <- unlist(y)
 z$hvida <- unlist(w)
 z$medalhiti <- unlist(t)
+dt <- data.table::as.data.table(z)
+ans <- dt[order(-timabil, vindur )]
 =======
 # 52 vikur:
 
